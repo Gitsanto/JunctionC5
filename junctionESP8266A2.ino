@@ -1,0 +1,79 @@
+#include <ESP8266WiFi.h>
+#include <Servo.h> 
+#include <Milkcocoa.h>
+
+/************************* WiFi Access Point *********************************/
+
+#define WLAN_SSID       "nad11-a5a578"
+#define WLAN_PASS       "73fd50894448d"
+
+/************************* Your Milkcocoa Setup *********************************/
+
+#define MILKCOCOA_APP_ID      "applej226hj6o"
+#define MILKCOCOA_DATASTORE   "junction"
+
+/************* Milkcocoa Setup (you don't need to change this!) ******************/
+
+#define MILKCOCOA_SERVERPORT  1883
+
+/************ Global State (you don't need to change this!) ******************/
+
+// Create an ESP8266 WiFiClient class to connect to the MQTT server.
+WiFiClient client;
+
+const char MQTT_SERVER[] PROGMEM    = MILKCOCOA_APP_ID ".mlkcca.com";
+const char MQTT_CLIENTID[] PROGMEM  = __TIME__ MILKCOCOA_APP_ID;
+
+Milkcocoa milkcocoa = Milkcocoa(&client, MQTT_SERVER, MILKCOCOA_SERVERPORT, MILKCOCOA_APP_ID, MQTT_CLIENTID);
+Servo myservo;
+
+void setup() {
+  Serial.begin(115200);
+  delay(100);
+  myservo.attach(2);  // attaches the servo on GIO2 to the servo object 
+  myservo.write(0);
+
+  Serial.println(F("Milkcocoa SDK demo"));
+
+  // Connect to WiFi access point.
+  Serial.println(); Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(WLAN_SSID);
+
+  WiFi.begin(WLAN_SSID, WLAN_PASS);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  Serial.println( milkcocoa.on(MILKCOCOA_DATASTORE, "push", onpush) );
+};
+
+void loop() {
+  milkcocoa.loop();
+
+//  DataElement elem = DataElement();
+//  elem.setValue("v", 1);
+//
+//  milkcocoa.push(MILKCOCOA_DATASTORE, &elem);
+  Serial.println(".");
+  myservo.write(0);
+  delay(1000);
+  myservo.detach();
+  
+}
+
+void onpush(DataElement *elem) {
+  Serial.println("onpush");
+  Serial.println(elem->getInt("v"));
+  
+  myservo.attach(2);
+  myservo.write(180);              // tell servo to go to position in variable 'pos' 
+    delay(1000);
+};
+
